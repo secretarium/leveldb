@@ -282,7 +282,7 @@ endif(HAVE_TCMALLOC)
 find_package(Threads REQUIRED)
 target_link_libraries(leveldb Threads::Threads)
 
-target_compile_options(leveldb PRIVATE ${HOST_COMPILE_OPTIONS} /wd4267 /wd4244)
+target_compile_options(leveldb PRIVATE ${HOST_COMPILE_OPTIONS} /wd4267 /wd4244 /wd4722)
 
 target_link_options(leveldb PRIVATE ${HOST_LINK_OPTIONS})
 set_property(TARGET leveldb PROPERTY COMPILE_PDB_NAME leveldb)
