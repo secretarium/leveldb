@@ -30,9 +30,9 @@ else (WIN32)
   set(LEVELDB_PLATFORM_NAME LEVELDB_PLATFORM_POSIX)
 endif (WIN32)
 
-option(LEVELDB_BUILD_TESTS "Build LevelDB's unit tests" ON)
-option(LEVELDB_BUILD_BENCHMARKS "Build LevelDB's benchmarks" ON)
-option(LEVELDB_INSTALL "Install LevelDB's header and library" ON)
+option(LEVELDB_BUILD_TESTS "Build LevelDB's unit tests" OFF)
+option(LEVELDB_BUILD_BENCHMARKS "Build LevelDB's benchmarks" OFF)
+option(LEVELDB_INSTALL "Install LevelDB's header and library" OFF)
 
 include(CheckIncludeFile)
 check_include_file("unistd.h" HAVE_UNISTD_H)
@@ -52,7 +52,7 @@ check_cxx_symbol_exists(fdatasync "unistd.h" HAVE_FDATASYNC)
 check_cxx_symbol_exists(F_FULLFSYNC "fcntl.h" HAVE_FULLFSYNC)
 check_cxx_symbol_exists(O_CLOEXEC "fcntl.h" HAVE_O_CLOEXEC)
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+#[[if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # Disable C++ exceptions.
   string(REGEX REPLACE "/EH[a-z]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs-c-")
@@ -74,7 +74,7 @@ else(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # Disable RTTI.
   string(REGEX REPLACE "-frtti" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
-endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")]]
 
 # Test whether -Wthread-safety is available. See
 # https://clang.llvm.org/docs/ThreadSafetyAnalysis.html
@@ -245,6 +245,7 @@ target_compile_definitions(leveldb
     LEVELDB_COMPILE_LIBRARY
     # Used by port/port.h.
     ${LEVELDB_PLATFORM_NAME}=1
+    ${HOST_DEFINES}
 )
 if (NOT HAVE_CXX17_HAS_INCLUDE)
   target_compile_definitions(leveldb
@@ -281,10 +282,19 @@ endif(HAVE_TCMALLOC)
 find_package(Threads REQUIRED)
 target_link_libraries(leveldb Threads::Threads)
 
-add_executable(leveldbutil
-  "db/leveldbutil.cc"
-)
-target_link_libraries(leveldbutil leveldb)
+target_compile_options(leveldb PRIVATE ${HOST_COMPILE_OPTIONS} /wd4267 /wd4244)
+
+target_link_options(leveldb PRIVATE ${HOST_LINK_OPTIONS})
+set_property(TARGET leveldb PROPERTY COMPILE_PDB_NAME leveldb)
+add_library(leveldb::leveldb ALIAS leveldb)
+
+
+if(LEVELDB_BUILD_LEVELDBUTIL)
+  add_executable(leveldbutil
+    "db/leveldbutil.cc"
+  )
+  target_link_libraries(leveldbutil leveldb)
+endif()
 
 if(LEVELDB_BUILD_TESTS)
   enable_testing()
